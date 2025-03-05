@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Métodos Numéricos</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="container mt-4">
+    <h2 class="text-center">Métodos Numéricos</h2>
+    
+    <div class="mb-3">
+        <label for="metodo" class="form-label">Selecciona un método:</label>
+        <select id="metodo" class="form-select" onchange="mostrarCampos()">
+            <option value="euler">Euler Mejorado</option>
+            <option value="runge-kutta">Runge-Kutta 4° Orden</option>
+        </select>
+    </div>
+
+    <div id="inputs-container"></div>
+
+    <button class="btn btn-primary mt-3" onclick="calcular()">Calcular</button>
+    <h3 class="mt-4">Resultado: <span id="resultado"></span></h3>
+
+    <table class="table table-bordered mt-4">
+        <thead>
+            <tr>
+                <th>Iteración</th>
+                <th>x</th>
+                <th>y Estimado</th>
+                <th>y Real</th>
+                <th>Error</th>
+            </tr>
+        </thead>
+        <tbody id="tabla-resultados"></tbody>
+    </table>
+    
+    <script>
+        function mostrarCampos() {
+            const metodo = document.getElementById("metodo").value;
+            const container = document.getElementById("inputs-container");
+            let html = "";
+            
+            if (metodo === "euler" || metodo === "runge-kutta") {
+                html = ` 
+                    <label>Función f(x, y):</label>
+                    <input type="text" id="fx" class="form-control" placeholder="Ej: x + y">
+                    <label>x0:</label>
+                    <input type="number" id="x0" class="form-control">
+                    <label>y0:</label>
+                    <input type="number" id="y0" class="form-control">
+                    <label>Paso h:</label>
+                    <input type="number" id="h" class="form-control">
+                    <label>Iteraciones n:</label>
+                    <input type="number" id="n" class="form-control">
+                `;
+            }
+            container.innerHTML = html;
+        }
+
+        function evaluarFuncion(fx, variables) {
+            return Function(...Object.keys(variables), `return ${fx};`)(...Object.values(variables));
+        }
+
+        function calcularYReal(x) {
+            // Implementar la función real de la ecuación diferencial (esto depende de tu caso específico).
+            // Ejemplo: para la ecuación y' = x + y, y_real = e^x - x - 1.
+            return Math.exp(x) - x - 1;  // Reemplaza esto con la solución real de tu problema.
+        }
+
+        function eulerMejorado(fx, x0, y0, h, n) {
+            let x = x0, y = y0;
+            let resultados = [{ iter: 0, x: x.toFixed(4), y: y.toFixed(4), yReal: calcularYReal(x).toFixed(4), error: "0.0000" }];
+            for (let i = 1; i <= n; i++) {
+                let yPred = y + h * evaluarFuncion(fx, { x, y });
+                y += (h / 2) * (evaluarFuncion(fx, { x, y }) + evaluarFuncion(fx, { x: x + h, y: yPred }));
+                x += h;
+
+                let yReal = calcularYReal(x).toFixed(4);
+                let error = Math.abs(y - calcularYReal(x)).toFixed(4);
+
+                resultados.push({ iter: i, x: x.toFixed(4), y: y.toFixed(4), yReal, error });
+            }
+            actualizarTabla(resultados);
+            return `x = ${x.toFixed(4)}, y = ${y.toFixed(4)}`;
+        }
+
+        function rungeKutta4(fx, x0, y0, h, n) {
+            let x = x0, y = y0;
+            let resultados = [{ iter: 0, x: x.toFixed(4), y: y.toFixed(4), yReal: calcularYReal(x).toFixed(4), error: "0.0000" }];
+            for (let i = 1; i <= n; i++) {
+                let k1 = h * evaluarFuncion(fx, { x, y });
+                let k2 = h * evaluarFuncion(fx, { x: x + h / 2, y: y + k1 / 2 });
+                let k3 = h * evaluarFuncion(fx, { x: x + h / 2, y: y + k2 / 2 });
+                let k4 = h * evaluarFuncion(fx, { x: x + h, y: y + k3 });
+                y += (k1 + 2 * k2 + 2 * k3 + k4) / 6;
+                x += h;
+
+                let yReal = calcularYReal(x).toFixed(4);
+                let error = Math.abs(y - calcularYReal(x)).toFixed(4);
+
+                resultados.push({ iter: i, x: x.toFixed(4), y: y.toFixed(4), yReal, error });
+            }
+            actualizarTabla(resultados);
+            return `x = ${x.toFixed(4)}, y = ${y.toFixed(4)}`;
+        }
+
+        function actualizarTabla(resultados) {
+            const tabla = document.getElementById("tabla-resultados");
+            tabla.innerHTML = resultados.map(r => 
+                `<tr>
+                    <td>${r.iter}</td>
+                    <td>${r.x}</td>
+                    <td>${r.y}</td>
+                    <td>${r.yReal}</td>
+                    <td>${r.error}</td>
+                </tr>`
+            ).join("\n");
+        }
+
+        function calcular() {
+            const metodo = document.getElementById("metodo").value;
+            const fx = document.getElementById("fx").value;
+            let resultado = "";
+
+            if (metodo === "euler") {
+                resultado = eulerMejorado(fx, +x0.value, +y0.value, +h.value, +n.value);
+            } else if (metodo === "runge-kutta") {
+                resultado = rungeKutta4(fx, +x0.value, +y0.value, +h.value, +n.value);
+            }
+            document.getElementById("resultado").textContent = resultado;
+        }
+
+        mostrarCampos();
+    </script>
+</body>
+</html>
